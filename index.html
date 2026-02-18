@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Battery Flap - Kid Edition</title>
+  <title>Battery Flap</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
-      background: #101820;
       font-family: Arial, sans-serif;
-      color: white;
       text-align: center;
+      color: white;
+      background: #000;
     }
 
     h2 {
@@ -17,7 +17,6 @@
     }
 
     canvas {
-      background: #182b3a;
       display: block;
       margin: 10px auto;
       border: 3px solid white;
@@ -26,9 +25,8 @@
 </head>
 <body>
 
-<h2>🔋New Energy New York Battery Flap</h2>
+<h2>🔋New Energy New York Battery Jump! </h2>
 <p>Press SPACE to Flap</p>
-  <p>Try not to hit the walls!</p>
 
 <canvas id="gameCanvas" width="400" height="600"></canvas>
 
@@ -36,11 +34,15 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// 🔹 Load Background Image
+const background = new Image();
+background.src = "background.jpg";  //
+
 let battery = {
   x: 80,
   y: 250,
-  width: 35,      // Smaller width
-  height: 50,     // Smaller height
+  width: 35,
+  height: 50,
   velocity: 0,
   gravity: 0.35,
   lift: -7,
@@ -59,22 +61,22 @@ document.addEventListener("keydown", function(e) {
   }
 });
 
+function drawBackground() {
+  ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+}
+
 function drawBattery() {
-  // Body
   ctx.fillStyle = "#00cc44";
   ctx.fillRect(battery.x, battery.y, battery.width, battery.height);
 
-  // White outline
   ctx.strokeStyle = "white";
   ctx.lineWidth = 3;
   ctx.strokeRect(battery.x, battery.y, battery.width, battery.height);
 
-  // Tip (scaled down)
   ctx.fillStyle = "#dddddd";
   ctx.fillRect(battery.x + 10, battery.y - 8, 15, 8);
   ctx.strokeRect(battery.x + 10, battery.y - 8, 15, 8);
 
-  // Charge bar inside (scaled)
   let chargeHeight = (battery.charge / 100) * 30;
 
   ctx.fillStyle = battery.charge > 30 ? "#003300" : "#ffffff";
@@ -102,35 +104,17 @@ function createPipe() {
 function drawPipes() {
   pipes.forEach(pipe => {
 
-    // Blue pipes
     ctx.fillStyle = "#0077cc";
     ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
     ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height);
 
-    // White outline
     ctx.strokeStyle = "white";
     ctx.lineWidth = 3;
     ctx.strokeRect(pipe.x, 0, pipe.width, pipe.top);
     ctx.strokeRect(pipe.x, pipe.bottom, pipe.width, canvas.height);
 
-    // Stripe pattern
-    ctx.strokeStyle = "#ffffff55";
-    for (let i = 0; i < pipe.top; i += 20) {
-      ctx.beginPath();
-      ctx.moveTo(pipe.x, i);
-      ctx.lineTo(pipe.x + pipe.width, i);
-      ctx.stroke();
-    }
-    for (let i = pipe.bottom; i < canvas.height; i += 20) {
-      ctx.beginPath();
-      ctx.moveTo(pipe.x, i);
-      ctx.lineTo(pipe.x + pipe.width, i);
-      ctx.stroke();
-    }
-
     pipe.x -= 1.5;
 
-    // Collision detection
     if (
       battery.x < pipe.x + pipe.width &&
       battery.x + battery.width > pipe.x &&
@@ -139,7 +123,6 @@ function drawPipes() {
       gameOver = true;
     }
 
-    // Recharge
     if (!pipe.passed && pipe.x + pipe.width < battery.x) {
       pipe.passed = true;
       score++;
@@ -186,7 +169,6 @@ function drawUI() {
   }
 
   if (gameOver) {
-    ctx.fillStyle = "white";
     ctx.font = "30px Arial";
     ctx.fillText("Game Over!", 100, 280);
     ctx.font = "20px Arial";
@@ -205,13 +187,11 @@ function resetGame() {
 }
 
 function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  drawBackground();
   update();
   drawBattery();
   drawPipes();
   drawUI();
-
   requestAnimationFrame(gameLoop);
 }
 
@@ -220,4 +200,3 @@ gameLoop();
 
 </body>
 </html>
-
