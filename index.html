@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Battery Flap</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            color: white;
-            background: #000;
-        }
+  <title>Battery Flap - Kid Edition</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      background: #000;
+    }
 
-        h2 {
-            margin-top: 10px;
-        }
+    h2 {
+      margin-top: 10px;
+    }
 
-        canvas {
-            display: block;
-            margin: 10px auto;
-            border: 3px solid white;
-            background: #111;
-        }
-    </style>
+    canvas {
+      display: block;
+      margin: 10px auto;
+      border: 3px solid white;
+    }
+  </style>
 </head>
 <body>
 
-<h2>🔋 New Energy New York Battery Jump!</h2>
+<h2>🔋 Battery Flap</h2>
 <p>Press SPACE to Flap</p>
 
 <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -35,145 +34,163 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-let bird;
-let pipes;
-let score;
-let gameOver;
-let gameStarted;
+// LOAD BACKGROUND IMAGE
+const background = new Image();
+background.src = "background.jpg"; // <-- Your image name
 
-function resetGame() {
-    bird = {
-        x: 80,
-        y: 300,
-        width: 30,
-        height: 30,
-        gravity: 0.6,
-        lift: -10,
-        velocity: 0
-    };
+let battery = {
+  x: 80,
+  y: 250,
+  width: 35,
+  height: 50,
+  velocity: 0,
+  gravity: 0.35,
+  lift: -7,
+  charge: 100
+};
 
-    pipes = [];
-    score = 0;
-    gameOver = false;
-    gameStarted = false;
+let pipes = [];
+let frame = 0;
+let score = 0;
+let gameOver = false;
+
+document.addEventListener("keydown", function(e) {
+  if (e.code === "Space") {
+    if (gameOver) resetGame();
+    battery.velocity = battery.lift;
+  }
+});
+
+function drawBackground() {
+  ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 }
 
-resetGame();
+function drawBattery() {
+  ctx.fillStyle = "#00cc44";
+  ctx.fillRect(battery.x, battery.y, battery.width, battery.height);
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(battery.x, battery.y, battery.width, battery.height);
+
+  ctx.fillStyle = "#dddddd";
+  ctx.fillRect(battery.x + 10, battery.y - 8, 15, 8);
+  ctx.strokeRect(battery.x + 10, battery.y - 8, 15, 8);
+
+  let chargeHeight = (battery.charge / 100) * 30;
+
+  ctx.fillStyle = battery.charge > 30 ? "#003300" : "#ffffff";
+  ctx.fillRect(
+    battery.x + 6,
+    battery.y + 40 - chargeHeight,
+    23,
+    chargeHeight
+  );
+}
 
 function createPipe() {
-    const gap = 150;
-    const topHeight = Math.random() * 300 + 50;
+  let gap = 190;
+  let topHeight = Math.random() * 220 + 60;
 
-    pipes.push({
-        x: canvas.width,
-        top: topHeight,
-        bottom: canvas.height - topHeight - gap,
-        width: 50
-    });
+  pipes.push({
+    x: canvas.width,
+    top: topHeight,
+    bottom: topHeight + gap,
+    width: 70,
+    passed: false
+  });
+}
+
+function drawPipes() {
+  pipes.forEach(pipe => {
+
+    ctx.fillStyle = "#0077cc";
+    ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+    ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height);
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(pipe.x, 0, pipe.width, pipe.top);
+    ctx.strokeRect(pipe.x, pipe.bottom, pipe.width, canvas.height);
+
+    pipe.x -= 1.5;
+
+    if (
+      battery.x < pipe.x + pipe.width &&
+      battery.x + battery.width > pipe.x &&
+      (battery.y < pipe.top || battery.y + battery.height > pipe.bottom)
+    ) {
+      gameOver = true;
+    }
+
+    if (!pipe.passed && pipe.x + pipe.width < battery.x) {
+      pipe.passed = true;
+      score++;
+      battery.charge = Math.min(100, battery.charge + 20);
+    }
+  });
+
+  pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
 }
 
 function update() {
-    if (!gameStarted || gameOver) return;
+  if (gameOver) return;
 
-    bird.velocity += bird.gravity;
-    bird.y += bird.velocity;
+  frame++;
 
-    if (bird.y + bird.height > canvas.height || bird.y < 0) {
-        gameOver = true;
-    }
+  battery.velocity += battery.gravity;
+  battery.y += battery.velocity;
 
-    if (pipes.length === 0 || pipes[pipes.length - 1].x < 250) {
-        createPipe();
-    }
+  battery.charge -= 0.03;
 
-    pipes.forEach(pipe => {
-        pipe.x -= 2;
+  if (battery.charge <= 0) {
+    battery.charge = 0;
+    gameOver = true;
+  }
 
-        if (
-            bird.x < pipe.x + pipe.width &&
-            bird.x + bird.width > pipe.x &&
-            (bird.y < pipe.top || bird.y + bird.height > canvas.height - pipe.bottom)
-        ) {
-            gameOver = true;
-        }
+  if (frame % 110 === 0) {
+    createPipe();
+  }
 
-        if (pipe.x + pipe.width === bird.x) {
-            score++;
-        }
-    });
-
-    pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+  if (battery.y + battery.height > canvas.height || battery.y < 0) {
+    gameOver = true;
+  }
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function drawUI() {
+  ctx.fillStyle = "white";
+  ctx.font = "22px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+  ctx.fillText("Charge: " + Math.floor(battery.charge) + "%", 10, 60);
 
-    // Bird
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-
-    // Pipes
-    ctx.fillStyle = "green";
-    pipes.forEach(pipe => {
-        ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
-        ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom);
-    });
-
-    // Score
-    ctx.fillStyle = "white";
+  if (gameOver) {
+    ctx.font = "30px Arial";
+    ctx.fillText("Game Over!", 100, 280);
     ctx.font = "20px Arial";
-    ctx.fillText("Score: " + score, 10, 30);
+    ctx.fillText("Press SPACE to Restart", 80, 320);
+  }
+}
 
-    // Start Screen
-    if (!gameStarted && !gameOver) {
-        ctx.fillStyle = "#ADD8E6";
-        ctx.fillRect(60, 230, 280, 100);
-
-        ctx.fillStyle = "#003366";
-        ctx.textAlign = "center";
-        ctx.font = "24px Arial";
-        ctx.fillText("Press SPACE to Start", canvas.width / 2, 280);
-        ctx.textAlign = "left";
-    }
-
-    // Game Over Screen
-    if (gameOver) {
-        ctx.fillStyle = "#ADD8E6";
-        ctx.fillRect(60, 210, 280, 140);
-
-        ctx.fillStyle = "#003366";
-        ctx.textAlign = "center";
-
-        ctx.font = "30px Arial";
-        ctx.fillText("GAME OVER", canvas.width / 2, 260);
-
-        ctx.font = "20px Arial";
-        ctx.fillText("Press SPACE to Restart", canvas.width / 2, 300);
-
-        ctx.textAlign = "left";
-    }
+function resetGame() {
+  battery.y = 250;
+  battery.velocity = 0;
+  battery.charge = 100;
+  pipes = [];
+  score = 0;
+  frame = 0;
+  gameOver = false;
 }
 
 function gameLoop() {
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
+  drawBackground();
+  update();
+  drawBattery();
+  drawPipes();
+  drawUI();
+  requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
-
-document.addEventListener("keydown", function(e) {
-    if (e.code === "Space") {
-        if (!gameStarted) {
-            gameStarted = true;
-        } else if (gameOver) {
-            resetGame();
-            gameStarted = true;
-        } else {
-            bird.velocity = bird.lift;
-        }
-    }
-});
 </script>
 
 </body>
