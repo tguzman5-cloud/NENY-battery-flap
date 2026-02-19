@@ -1,31 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Battery Flap</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      color: white;
-      background: #000;
-    }
+    <title>Battery Flap</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: white;
+        }
 
-    h2 {
-      margin-top: 10px;
-    }
+        canvas {
+            display: block;
+            margin: 10px auto;
+            border: 3px solid white;
+        }
 
-    canvas {
-      display: block;
-      margin: 10px auto;
-      border: 3px solid white;
-    }
-  </style>
+        h2 {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
-<h2>🔋 Battery Flap</h2>
+<h2>🔋 Battery Jump!</h2>
 <p>Press SPACE to Flap</p>
 
 <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -34,168 +34,204 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// 🔹 Load Background Image
-const background = new Image();
-background.src = "background.jpg";  // Make sure this matches your uploaded image name
+let background = new Image();
+background.src = "background.jpg"; // Make sure file exists
 
-let battery = {
-  x: 80,
-  y: 250,
-  width: 35,
-  height: 50,
-  velocity: 0,
-  gravity: 0.35,
-  lift: -7,
-  charge: 100
-};
+let bird;
+let pipes;
+let score;
+let gameOver;
+let gameStarted;
 
-let pipes = [];
-let frame = 0;
-let score = 0;
-let gameOver = false;
+function resetGame() {
+    bird = {
+        x: 80,
+        y: 300,
+        width: 25,
+        height: 40,
+        gravity: 0.5,   // Easier
+        lift: -9,
+        velocity: 0
+    };
 
-document.addEventListener("keydown", function(e) {
-  if (e.code === "Space") {
-    if (gameOver) resetGame();
-    battery.velocity = battery.lift;
-  }
-});
-
-function drawBackground() {
-  ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    pipes = [];
+    score = 0;
+    gameOver = false;
+    gameStarted = false;
 }
 
-function drawBattery() {
-  ctx.fillStyle = "#00cc44";
-  ctx.fillRect(battery.x, battery.y, battery.width, battery.height);
-
-  ctx.strokeStyle = "white";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(battery.x, battery.y, battery.width, battery.height);
-
-  ctx.fillStyle = "#dddddd";
-  ctx.fillRect(battery.x + 10, battery.y - 8, 15, 8);
-  ctx.strokeRect(battery.x + 10, battery.y - 8, 15, 8);
-
-  let chargeHeight = (battery.charge / 100) * 30;
-
-  ctx.fillStyle = battery.charge > 30 ? "#003300" : "#ffffff";
-  ctx.fillRect(
-    battery.x + 6,
-    battery.y + 40 - chargeHeight,
-    23,
-    chargeHeight
-  );
-}
+resetGame();
 
 function createPipe() {
-  let gap = 190;
-  let topHeight = Math.random() * 220 + 60;
+    const gap = 180; // Larger gap = easier
+    const topHeight = Math.random() * 250 + 50;
 
-  pipes.push({
-    x: canvas.width,
-    top: topHeight,
-    bottom: topHeight + gap,
-    width: 70,
-    passed: false
-  });
-}
-
-function drawPipes() {
-  pipes.forEach(pipe => {
-
-    ctx.fillStyle = "#0077cc";
-    ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
-    ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height);
-
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(pipe.x, 0, pipe.width, pipe.top);
-    ctx.strokeRect(pipe.x, pipe.bottom, pipe.width, canvas.height);
-
-    pipe.x -= 1.5;
-
-    if (
-      battery.x < pipe.x + pipe.width &&
-      battery.x + battery.width > pipe.x &&
-      (battery.y < pipe.top || battery.y + battery.height > pipe.bottom)
-    ) {
-      gameOver = true;
-    }
-
-    if (!pipe.passed && pipe.x + pipe.width < battery.x) {
-      pipe.passed = true;
-      score++;
-      battery.charge = Math.min(100, battery.charge + 20);
-    }
-  });
-
-  pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+    pipes.push({
+        x: canvas.width,
+        top: topHeight,
+        bottom: canvas.height - topHeight - gap,
+        width: 60
+    });
 }
 
 function update() {
-  if (gameOver) return;
+    if (!gameStarted || gameOver) return;
 
-  frame++;
+    bird.velocity += bird.gravity;
+    bird.y += bird.velocity;
 
-  battery.velocity += battery.gravity;
-  battery.y += battery.velocity;
+    if (bird.y + bird.height > canvas.height || bird.y < 0) {
+        gameOver = true;
+    }
 
-  battery.charge -= 0.03;
+    if (pipes.length === 0 || pipes[pipes.length - 1].x < 250) {
+        createPipe();
+    }
 
-  if (battery.charge <= 0) {
-    battery.charge = 0;
-    gameOver = true;
-  }
+    pipes.forEach(pipe => {
+        pipe.x -= 2;
 
-  if (frame % 110 === 0) {
-    createPipe();
-  }
+        if (
+            bird.x < pipe.x + pipe.width &&
+            bird.x + bird.width > pipe.x &&
+            (bird.y < pipe.top || bird.y + bird.height > canvas.height - pipe.bottom)
+        ) {
+            gameOver = true;
+        }
 
-  if (battery.y + battery.height > canvas.height || battery.y < 0) {
-    gameOver = true;
-  }
+        if (pipe.x + pipe.width === bird.x) {
+            score++;
+        }
+    });
+
+    pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
 }
 
-function drawUI() {
-  ctx.fillStyle = "black";
-  ctx.font = "22px Arial";
-  ctx.fillText("Score: " + score, 10, 30);
-  ctx.fillText("Charge: " + Math.floor(battery.charge) + "%", 10, 60);
+function drawBattery(x, y, width, height) {
+    // Battery body (green - requested)
+    ctx.fillStyle = "#2ecc71";
+    ctx.fillRect(x, y, width, height);
 
-  if (battery.charge < 25 && !gameOver) {
-    ctx.fillStyle = "#ffeb3b";
-    ctx.fillText("LOW BATTERY!", 210, 30);
-  }
+    // Battery tip
+    ctx.fillStyle = "#1e8449";
+    ctx.fillRect(x + width / 4, y - 6, width / 2, 6);
 
-  if (gameOver) {
-    ctx.font = "30px Arial";
-    ctx.fillText("Game Over!", 100, 280);
+    // White charge line (contrast friendly)
+    ctx.fillStyle = "white";
+    ctx.fillRect(x + 6, y + height / 2 - 4, width - 12, 8);
+}
+
+function drawRoundedBox(x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, radius);
+    ctx.fill();
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background
+    if (background.complete) {
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    } else {
+        ctx.fillStyle = "#87CEEB";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Pipes (dark gray for colorblind friendliness)
+    ctx.fillStyle = "#444";
+    pipes.forEach(pipe => {
+        ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+        ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom);
+    });
+
+    // Battery player
+    drawBattery(bird.x, bird.y, bird.width, bird.height);
+
+    // Score
+    ctx.fillStyle = "white";
     ctx.font = "20px Arial";
-    ctx.fillText("Press SPACE to Restart", 80, 320);
-  }
-}
+    ctx.fillText("Score: " + score, 10, 30);
 
-function resetGame() {
-  battery.y = 250;
-  battery.velocity = 0;
-  battery.charge = 100;
-  pipes = [];
-  score = 0;
-  frame = 0;
-  gameOver = false;
+    // START SCREEN
+    if (!gameStarted && !gameOver) {
+
+        const boxWidth = 340;
+        const boxHeight = 90;
+        const boxX = canvas.width / 2 - boxWidth / 2;
+        const boxY = canvas.height / 2 - boxHeight / 2;
+
+        ctx.shadowColor = "rgba(0,0,0,0.3)";
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 4;
+
+        ctx.fillStyle = "#ADD8E6";
+        drawRoundedBox(boxX, boxY, boxWidth, boxHeight, 15);
+
+        ctx.shadowColor = "transparent";
+
+        ctx.fillStyle = "#003366";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "24px Arial";
+        ctx.fillText("Press SPACE to Start", canvas.width / 2, canvas.height / 2);
+
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+    }
+
+    // GAME OVER SCREEN
+    if (gameOver) {
+
+        const boxWidth = 360;
+        const boxHeight = 120;
+        const boxX = canvas.width / 2 - boxWidth / 2;
+        const boxY = canvas.height / 2 - boxHeight / 2;
+
+        ctx.shadowColor = "rgba(0,0,0,0.3)";
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 4;
+
+        ctx.fillStyle = "#ADD8E6";
+        drawRoundedBox(boxX, boxY, boxWidth, boxHeight, 15);
+
+        ctx.shadowColor = "transparent";
+
+        ctx.fillStyle = "#003366";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.font = "30px Arial";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+
+        ctx.font = "20px Arial";
+        ctx.fillText("Press SPACE to Restart", canvas.width / 2, canvas.height / 2 + 20);
+
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+    }
 }
 
 function gameLoop() {
-  drawBackground();
-  update();
-  drawBattery();
-  drawPipes();
-  drawUI();
-  requestAnimationFrame(gameLoop);
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
+
+document.addEventListener("keydown", function(e) {
+    if (e.code === "Space") {
+        if (!gameStarted) {
+            gameStarted = true;
+        } else if (gameOver) {
+            resetGame();
+            gameStarted = true;
+        } else {
+            bird.velocity = bird.lift;
+        }
+    }
+});
 </script>
 
 </body>
