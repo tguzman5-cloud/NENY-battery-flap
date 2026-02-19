@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Battery Flap - Kid Edition</title>
+  <title>Battery Flap</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
       font-family: Arial, sans-serif;
-      color: white;
       text-align: center;
+      color: white;
       background: #000;
     }
 
@@ -34,9 +34,9 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// LOAD BACKGROUND IMAGE
+// 🔹 Load Background Image
 const background = new Image();
-background.src = "background.jpg"; // <-- Your image name
+background.src = "background.jpg";  // Make sure this matches your uploaded image name
 
 let battery = {
   x: 80,
@@ -158,10 +158,15 @@ function update() {
 }
 
 function drawUI() {
-  ctx.fillStyle = "white";
+  ctx.fillStyle = "black";
   ctx.font = "22px Arial";
   ctx.fillText("Score: " + score, 10, 30);
   ctx.fillText("Charge: " + Math.floor(battery.charge) + "%", 10, 60);
+
+  if (battery.charge < 25 && !gameOver) {
+    ctx.fillStyle = "#ffeb3b";
+    ctx.fillText("LOW BATTERY!", 210, 30);
+  }
 
   if (gameOver) {
     ctx.font = "30px Arial";
